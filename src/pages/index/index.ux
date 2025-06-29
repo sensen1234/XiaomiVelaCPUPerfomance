@@ -1,0 +1,281 @@
+<template>
+  <div class="page">
+    <!-- 标题区域 -->
+    <div class="header">
+      <text class="title">Vela性能测试（仅供参考）</text>
+      <text class="title">By 星野米诺Mino（bilibili）</text>
+      <text class="subtitle">设备跑分: {{score > 0 ? score.toFixed(0) : '--'}}</text>
+    </div>
+    
+    <!-- 测试项目列表 -->
+    <div class="test-item" for="test in tests">
+      <text class="label">{{test.label}}</text>
+      <text class="btn" @click="runTest(test.id)">测试</text>
+      <text class="result" if="{{test.result > 0}}">{{test.result}}ms</text>
+    </div>
+    
+    <!-- 控制按钮 -->
+    <div class="controls">
+      <text class="btn run-all" @click="runAllTests">全部测试</text>
+      <text class="btn reset" @click="resetTests">重置</text>
+    </div>
+    
+    <!-- 状态显示 -->
+    <text class="status" if="{{currentTest}}">测试中: {{currentTest}}</text>
+    
+    <!-- 结果汇总 -->
+    <div class="summary" if="{{totalTime > 0}}">
+      <text class="summary-title">测试结果</text>
+      <text>总耗时: {{totalTime}}ms</text>
+      <text>设备跑分: {{score.toFixed(0)}}</text>
+      <text class="score-comment">{{getScoreComment()}}</text>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    private: {
+      tests: [
+        { id: 'fib', label: '1.斐波那契(n=30)', result: 0 },
+        { id: 'prime', label: '2.素数筛选(n=10万)', result: 0 },
+        { id: 'sort', label: '3.数组排序(5000元素)', result: 0 },
+        { id: 'matrix', label: '4.矩阵计算(70*70)', result: 0 },
+        { id: 'string', label: '5.字符串处理(5000次)', result: 0 }
+      ],
+      totalTime: 0,
+      currentTest: "",
+      score: 0
+    },
+    
+    runTest(id) {
+      this.currentTest = this.tests.find(t => t.id === id).label;
+      
+      // 使用setTimeout避免阻塞UI
+      setTimeout(() => {
+        const start = Date.now();
+        
+        switch(id) {
+          case 'fib': this.fibTest(); break;
+          case 'prime': this.primeTest(); break;
+          case 'sort': this.sortTest(); break;
+          case 'matrix': this.matrixTest(); break;
+          case 'string': this.stringTest(); break;
+        }
+        
+        const time = Date.now() - start;
+        this.tests.find(t => t.id === id).result = time;
+        this.currentTest = "";
+        this.updateTotal();
+      }, 50);
+    },
+    
+    runAllTests() {
+      for (const test of this.tests) {
+        this.runTest(test.id);
+      }
+    },
+    
+    resetTests() {
+      this.tests.forEach(test => test.result = 0);
+      this.totalTime = 0;
+      this.score = 0;
+      this.currentTest = "";
+    },
+    
+    fibTest() {
+      function fib(n) {
+        if (n <= 1) return n;
+        return fib(n-1) + fib(n-2);
+      }
+      fib(30);
+    },
+    
+    primeTest() {
+      const n = 100000;
+      const isPrime = new Array(n+1).fill(true);
+      isPrime[0] = isPrime[1] = false;
+      for (let i=2; i<=Math.sqrt(n); i++) {
+        if (isPrime[i]) {
+          for (let j=i*i; j<=n; j+=i) isPrime[j] = false;
+        }
+      }
+    },
+    
+    sortTest() {
+      const arr = [];
+      for (let i=0; i<5000; i++) arr.push(Math.random());
+      arr.sort();
+    },
+    
+    matrixTest() {
+      const size = 70;
+      const a = Array(size).fill().map(() => Array(size).fill(0).map(() => Math.random()));
+      const b = Array(size).fill().map(() => Array(size).fill(0).map(() => Math.random()));
+      const r = Array(size).fill().map(() => Array(size).fill(0));
+      
+      for (let i=0; i<size; i++) {
+        for (let j=0; j<size; j++) {
+          for (let k=0; k<size; k++) {
+            r[i][j] += a[i][k] * b[k][j];
+          }
+        }
+      }
+    },
+    
+    stringTest() {
+      let s = "";
+      for (let i=0; i<5000; i++) {
+        s += i + ":" + Math.random().toString(36).slice(2, 6);
+      }
+    },
+    
+    updateTotal() {
+      // 计算总耗时
+      this.totalTime = this.tests.reduce((sum, t) => sum + (t.result || 0), 0);
+      
+      // 计算跑分：10000000 / 总耗时
+      this.score = this.totalTime > 3 ? 10000000 / this.totalTime : 0;
+    },
+    
+    getScoreComment() {
+      if (this.score === 0) return "";
+      if (this.score > 50000) return "性能卓越！";
+      if (this.score > 30000) return "性能良好";
+      if (this.score > 15000) return "性能中等";
+      if (this.score > 5000) return "性能一般";
+      return "性能有待提升";
+    }
+  }
+</script>
+
+<style>
+  .page {
+    flex-direction: column;
+    padding: 12px;
+    background-color: #000000; /* 深黑色背景 */
+    height: 100%;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #333; /* 深灰色边框 */
+  }
+  
+  .title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffffff; /* 白色标题 */
+    margin-bottom: 5px;
+    text-shadow: 0 0 5px rgba(100, 200, 255, 0.3); /* 微弱的文字发光效果 */
+  }
+  
+  .subtitle {
+    font-size: 26px;
+    color: #4fc3f7; /* 亮蓝色 */
+    font-weight: bold;
+  }
+  
+  .test-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 8px;
+    margin-bottom: 8px;
+    background-color: #0f0f0f; /* 深灰色背景 */
+    border-radius: 8px;
+    border: 1px solid #333; /* 深灰色边框 */
+  }
+  
+  .label {
+    flex: 1;
+    font-size: 24px;
+    color: #e0e0e0; /* 浅灰色文本 */
+  }
+  
+  .btn {
+    background-color: #1976d2; /* 深蓝色按钮 */
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 22px;
+    margin: 0 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  .run-all {
+    background-color: #388e3c; /* 深绿色 */
+  }
+  
+  .reset {
+    background-color: #d32f2f; /* 深红色 */
+  }
+  
+  .result {
+    width: 80px;
+    text-align: right;
+    font-size: 22px;
+    color: #ff6d00; /* 橙色 */
+    font-weight: bold;
+  }
+  
+  .status {
+    font-size: 22px;
+    color: #4fc3f7; /* 亮蓝色 */
+    text-align: center;
+    margin: 12px 0;
+    padding: 8px;
+    background-color: rgba(25, 118, 210, 0.1); /* 半透明深蓝背景 */
+    border-radius: 6px;
+  }
+  
+  .controls {
+    flex-direction: row;
+    justify-content: center;
+    margin: 16px 0;
+    gap: 20px;
+  }
+  
+  .summary {
+    flex-direction: column;
+    padding: 16px;
+    margin: 15px 0;
+    background-color: #000000; /* 深灰色背景 */
+    border-radius: 10px;
+    border: 1px solid #1a1a1a; /* 深灰色边框 */
+  }
+  
+  .summary-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  
+  .summary text {
+    font-size: 22px;
+    color: #bbbbbb; /* 中灰色 */
+    margin: 6px 0;
+    text-align: center;
+  }
+  
+  .score-comment {
+    font-size: 24px;
+    font-weight: bold;
+    color: #4fc3f7; /* 亮蓝色 */
+    margin-top: 12px;
+    text-align: center;
+  }
+  
+  .device-info {
+    font-size: 18px;
+    color: #777; /* 深灰色 */
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #333;
+  }
+</style>
