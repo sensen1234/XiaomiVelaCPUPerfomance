@@ -1,0 +1,2 @@
+# XiaomiVelaCPUPerfomance
+适用于小米VELA系统的CPU性能测试程序
